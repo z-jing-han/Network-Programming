@@ -16,3 +16,16 @@ Each folder contains two subdirectories: `spec/` and `todo/`.
         + It could either copy all folder (`todo/`) or copy the exe file.
 
 + The `todo/` folder contains the solution ideas and implementation files.
+
+## Environment
+
+`telnet` for project 2 and projec 3
+```
+sudo apt install inetutils-telnet
+```
+
+`boost/asio` for project 4
+```
+sudo apt install libboost-all-dev
+```
+

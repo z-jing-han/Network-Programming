@@ -15,8 +15,11 @@ make -C $PROJECT_PATH -j1
 sleep 2.0
 
 tmux split-window -v -p 80
+
+sleep 2.0
 tmux split-window -v -p 65
 
+sleep 2.0
 tmux select-pane -t 1
 ./demo_task.sh $PROJECT_PATH/np_simple $PORT1 1 2
 tmux select-pane -t 3
