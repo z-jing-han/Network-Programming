@@ -20,12 +20,18 @@ Each folder contains two subdirectories: `spec/` and `todo/`.
 ## Environment
 
 `telnet` for project 2 and projec 3
-```
+```.bash
 sudo apt install inetutils-telnet
 ```
 
 `boost/asio` for project 4
-```
+```.bash
 sudo apt install libboost-all-dev
 ```
+
+`tornado` for peojct 2 and project 3 demo
+```
+conda create network-programming-env -f environment.yaml
+```
+
 
