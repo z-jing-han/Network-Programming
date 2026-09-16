@@ -16,14 +16,6 @@ using namespace std;
 
 map<pair<int,int>, struct pipeStruct> UserPipes;
 
-/*
-int main(int argc, char* argv[]) {
-    npshellInit();
-    npshellLoop();
-    return 0;
-}
-*/
-
 void sigchld_handler(int signo) {
     while(waitpid(-1, NULL, WNOHANG) > 0);
 }
@@ -708,13 +700,17 @@ void executeCommand(Info info, map<int, struct pipeStruct>& pipeMap, const int c
                 UserPipes.erase(temp_pair_output);
             }
             
-            if ((info.op[argvIndex] == END_OF_COMMAND || info.op[argvIndex] == OUT_RD) && pipeMap.find((int)i) != pipeMap.end()) {
-                for (pid_t pid_i: pipeMap[(int)i].relate_pids) {
-                    waitpid(pid_i, &status, 0);
+            // Output result wait check: on the output case - not to user pipe need to wait
+            if (to_user_pipe == -1) {
+                if ((info.op[argvIndex] == END_OF_COMMAND || info.op[argvIndex] == OUT_RD) && pipeMap.find((int)i) != pipeMap.end()) {
+                    for (pid_t pid_i: pipeMap[(int)i].relate_pids) {
+                        waitpid(pid_i, &status, 0);
+                    }
+                } else if (info.op[argvIndex] == END_OF_COMMAND || info.op[argvIndex] == OUT_RD || info.op[argvIndex] == IGNORE) {
+                    waitpid(pid, &status, 0);
                 }
-            } else if (info.op[argvIndex] == END_OF_COMMAND || info.op[argvIndex] == OUT_RD || info.op[argvIndex] == IGNORE) {
-                waitpid(pid, &status, 0);
             }
+
         }
         
     }

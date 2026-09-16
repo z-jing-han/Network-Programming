@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# This machine has no system pip/tornado; client.py needs tornado to run.
+# Prepend the project-local venv (built for exactly this) so it's picked up
+# by every pane tmux spawns below -- harmless no-op if the venv isn't there.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VENV_BIN="$SCRIPT_DIR/../../../code-review/.venv/bin"
+[ -d "$VENV_BIN" ] && export PATH="$(cd "$VENV_BIN" && pwd):$PATH"
+
 PROJECT_PATH=$1
 PORT1=$2
 PORT2=$3
@@ -17,7 +24,7 @@ if [ -z "$TMUX" ]; then
     tmux new-session -s np_demo -n np_demo_sample "cd $PWD; ./demo_tmux.sh $PROJECT_PATH $PORT1 $PORT2"
   else
     tmux new-session -s np_demo -n np_demo_sample \
-    "tmux split-window -v -p 95; tmux split-window -v -p 55; cd $PWD; ./demo_task.sh $PROJECT_PATH $PORT1 2 3"
+    "tmux split-window -v -l 95%; tmux split-window -v -l 55%; cd $PWD; ./demo_task.sh $PROJECT_PATH $PORT1 2 3"
   fi
 else
   tmux new-window -n np_demo_sample

@@ -14,10 +14,10 @@ tmux set remain-on-exit on
 make -C $PROJECT_PATH -j1
 sleep 2.0
 
-tmux split-window -v -p 80
+tmux split-window -v -l 80%
 
 sleep 2.0
-tmux split-window -v -p 65
+tmux split-window -v -l 65%
 
 sleep 2.0
 tmux select-pane -t 1

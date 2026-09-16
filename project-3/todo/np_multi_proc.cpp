@@ -25,6 +25,7 @@ int main(int argc, char* argv[]) {
 void concurentConnectionOrientedServer(int port) {
 
     signal(SIGINT, release_share_memory);
+    signal(SIGTERM, release_share_memory);
     signal(SIGUSR1, sendMsg);
     signal(SIGUSR2, receiveFifo);
 
@@ -240,27 +241,40 @@ void receiveFifo(int signo) {
                 char fifoName[NAME_SIZE];
                 string fifo = "user_pipe/"+to_string(i)+"-"+to_string(user_idx_glob);
                 strcpy(fifoName, fifo.c_str());
-                UserPipeMatrix[i * MAX_CLIENT + user_idx_glob] = open(fifoName, O_RDONLY | O_NONBLOCK);
+                int rfd = open(fifoName, O_RDONLY | O_NONBLOCK);
+                if (rfd != -1) {
+                    int fl = fcntl(rfd, F_GETFL, 0);
+                    fcntl(rfd, F_SETFL, fl & ~O_NONBLOCK);
+                }
+                UserPipeMatrix[i * MAX_CLIENT + user_idx_glob] = rfd;
+                // UserPipeMatrix[i * MAX_CLIENT + user_idx_glob] = open(fifoName, O_RDONLY | O_NONBLOCK);
             }
         }
     }
 }
 
 void release_share_memory(int signo) {
-    if (signo == SIGINT) {
+    if (signo == SIGINT || signo == SIGTERM) {
         munmap(UserInfo, MAX_CLIENT * sizeof(struct UserInfo));
         munmap(msg, MAX_COMMAND_SIZE);
         munmap(UserPipeMatrix, MAX_CLIENT * MAX_CLIENT * sizeof(int));
         for (size_t i = 0; i < MAX_CLIENT; ++i) {
             munmap(firewall[i], INET_ADDRSTRLEN);
         }
-        
+        shm_unlink("UserInfo");
+        shm_unlink("msg");
+        shm_unlink("UserPipeMatrix");
+        for (size_t i = 0; i < MAX_CLIENT; ++i) {
+            string shm_name = "firewall[" + to_string(i) + "]";
+            shm_unlink(shm_name.c_str());
+        }
         exit(0);
     }
 }
 
 void npshellInit() {
     signal(SIGCHLD, sigchld_handler);
+    signal(SIGPIPE, SIG_IGN);
     chdir("working_directory");
     setenv("PATH", "bin:.", 1);
 }
@@ -277,7 +291,9 @@ void npshellLoop(const size_t user_idx) {
         typePrompt(false);
 
         int commandNum = readCommand(myInfo, totalCommandCount);
-        if (commandNum < 0) {
+        if (commandNum == -2) {
+            break;
+        } else if (commandNum == -1) {
             continue;
         }
         
@@ -562,7 +578,7 @@ int readCommand(Info &info, const int totalCommandCount) {
     
     
     if (tempArgv[0].empty()) {
-        return -1;
+        return -2;
     }
     
     for (size_t i = 0; i < info.op.size(); ++i) {
@@ -789,7 +805,6 @@ void executeCommand(Info info, map<int, struct pipeStruct>& pipeMap, const int c
             }
 
             if (from_user_pipe != -1 && from_token_idx != 0) {
-                waitpid(pid, &status, 0);
                 string fifo = "user_pipe/"+to_string(from_user_pipe)+"-"+to_string(user_idx);
                 char fifoName[NAME_SIZE];
                 strcpy(fifoName, fifo.c_str());
